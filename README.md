@@ -1,9 +1,9 @@
 # MS-SQLParserInsertToMerge
-Tool for translating INSERT to MERGE
+Tool for translating generated INSERT-scripts with data from tables (from SQL Server Management Studio Script Wizzard) to MERGE(InsertOrUpdate)-scripts
 # Fuctional
-Fixes the problem of not being able to generate scripts in the Insert Or Update format in SQL Server Management Studio
+Fixes an issue with the inability to create scripts in the InsertOrUpdate format in SQL Server Management Studio via script conversion
 # How to use:
-1.Generate script in SQL Server Management Studio with that parametrs
+1.Generate script in SQL Server Management Studio **ONLY** with that parametrs
 ![Параметры скрипта](https://user-images.githubusercontent.com/34218775/161938659-65135bcb-1976-4b6c-bea7-e7d2898f0a39.jpg)
 
 2.Drag and drop file with script to application **or** open application and write file name with extension (input.sql) (The file must be in the same folder)
