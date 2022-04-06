@@ -15,10 +15,37 @@ namespace MS_SQL_Parser___Insert_To_Merge
             using (StreamReader reader = new StreamReader(path))
             {
                 string? line;
+                bool isMultiLine = false;
+                string? multiLine = string.Empty;
 
                 while ((line = await reader.ReadLineAsync()) != null)
                 {
-                    builder.AddData(Parser.GetNodes(line));
+                    if (line.EndsWith(')') || line.EndsWith('O'))
+                    {
+                        if (isMultiLine)
+                        {
+                            multiLine += line;
+                            isMultiLine = false;
+                            builder.AddData(Parser.GetNodes(multiLine));
+                        }
+                        else
+                        {
+                            builder.AddData(Parser.GetNodes(line));
+                        }
+                    }
+                    else
+                    {
+                        if (!isMultiLine)
+                        {
+                            isMultiLine = true;
+                            multiLine = line;
+                        }
+                        else
+                        {
+                            multiLine += line;
+                        }
+
+                    }
                 }
             }
             var res = builder.GetResult();
