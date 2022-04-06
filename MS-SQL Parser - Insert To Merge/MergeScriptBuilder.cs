@@ -27,14 +27,14 @@ namespace MS_SQL_Parser___Insert_To_Merge
         private string ConvertToMerge(IDictionary<string, string> dataDict)
         {
             var sb = new StringBuilder();
-            sb.AppendLine($"MERGE {dataDict["tableName"]}  WITH(HOLDLOCK) AS target");
+            sb.AppendLine($"MERGE {dataDict["tableName"]}  WITH(HOLDLOCK) AS tgt");
             sb.AppendLine(GenerateUsingPart(dataDict));
             sb.AppendLine(GenerateSourcePart(dataDict));
-            sb.AppendLine($"\tON target.Id = {dataDict["[Id]"]}");
+            sb.AppendLine($"\tON tgt.[Id] = src.[Id]");
             sb.AppendLine($"WHEN MATCHED THEN");
             sb.AppendLine($"\tUPDATE");
             sb.AppendLine($"\tSET "+GenerateSetPart(dataDict));
-            sb.AppendLine("WHEN NOT MATHCED THEN");
+            sb.AppendLine("WHEN NOT MATCHED THEN");
             sb.AppendLine("\t"+GenerateInsertPartFields(dataDict));
             sb.AppendLine("\t"+GenerateInsertPartValues(dataDict));
             return sb.ToString();
@@ -48,7 +48,7 @@ namespace MS_SQL_Parser___Insert_To_Merge
             {
                 if (data.Key != "tableName")
                 {
-                    sb.Append(data.Value + ", ");
+                    sb.Append(data.Value + ",  ");
                 }
             }
             var result = sb.ToString().TrimEnd(',', ' ');
@@ -79,7 +79,7 @@ namespace MS_SQL_Parser___Insert_To_Merge
             foreach (var data in dataDict)
             {
                 i += 1;
-                if (data.Key != "tableName")
+                if (data.Key != "tableName" && data.Key != "[Id]")
                 {
                     if (i < dataDict.Keys.Count)
                     {
@@ -92,17 +92,17 @@ namespace MS_SQL_Parser___Insert_To_Merge
                 }
                
             }
-            var result = sb.ToString().TrimEnd(',','\n');
+            var result = sb.ToString();
             return result;
         }
 
         private string GenerateSourcePart(IDictionary<string, string> dataDict)
         {
             var sb = new StringBuilder();
-            sb.Append($"\tAS source (");
+            sb.Append($"\tAS src (");
             foreach (var data in dataDict)
             {
-                if (data.Key != "tableName" || data.Key != "[Id]")
+                if (data.Key != "tableName")
                 {
                     sb.Append(data.Key + ", ");
                 }
@@ -118,7 +118,7 @@ namespace MS_SQL_Parser___Insert_To_Merge
             sb.Append($"USING (VALUES (");
             foreach (var data in dataDict)
             {
-                if (data.Key!= "tableName" || data.Key!="[Id]")
+                if (data.Key!= "tableName")
                 {
                     sb.Append(data.Value + ", ");
                 }
@@ -130,15 +130,13 @@ namespace MS_SQL_Parser___Insert_To_Merge
     }
 }
 /* EXAMPLE
-merge [SysAdminUnit] with(HOLDLOCK) as target
-using (VALUES (CAST(N'2022-03-30T05:31:17.5590000' AS DateTime2), N'410006e1-ca4e-4502-a9ec-e54d922d2c00', CAST(N'2022-04-04T09:01:10.6090000' AS DateTime2), N'410006e1-ca4e-4502-a9ec-e54d922d2c00', N'Test4', N'', N'a29a3ba5-4b0d-de11-9a51-005056c00008', NULL, N'', N'', 0, NULL, 1, 0, 0, N'', N'', N'', 0, 0, N'1a778e3f-0a8e-e111-84a3-00155d054c03', 0, N'', N'', NULL, NULL, 0, NULL, 0, NULL, NULL, 0, NULL, N'', N''))
-    as source ( [CreatedOn], [CreatedById], [ModifiedOn], [ModifiedById], [Name], [Description], [ParentRoleId], [ContactId], [TimeZoneId], [UserPassword], [SysAdminUnitTypeValue], [AccountId], [Active], [LoggedIn], [SynchronizeWithLDAP], [LDAPEntry], [LDAPEntryId], [LDAPEntryDN], [IsDirectoryEntry], [ProcessListeners], [SysCultureId], [LoginAttemptCount], [SourceControlLogin], [SourceControlPassword], [PasswordExpireDate], [HomePageId], [ConnectionType], [UnblockTime], [ForceChangePassword], [LDAPElementId], [DateTimeFormatId], [SessionTimeout], [PortalAccountId], [Email], [OpenIDSub])
-    on target.Id = N'522cdd4d-5f68-4b87-8201-a8ba5c7559de'
-when matched then
-    update
-    set [Name] = source.[Name]
-when not matched then
-    insert ( [Id], [CreatedOn], [CreatedById], [ModifiedOn], [ModifiedById], [Name], [Description], [ParentRoleId], [ContactId], [TimeZoneId], [UserPassword], [SysAdminUnitTypeValue], [AccountId], [Active], [LoggedIn], [SynchronizeWithLDAP], [LDAPEntry], [LDAPEntryId], [LDAPEntryDN], [IsDirectoryEntry], [ProcessListeners], [SysCultureId], [LoginAttemptCount], [SourceControlLogin], [SourceControlPassword], [PasswordExpireDate], [HomePageId], [ConnectionType], [UnblockTime], [ForceChangePassword], [LDAPElementId], [DateTimeFormatId], [SessionTimeout], [PortalAccountId], [Email], [OpenIDSub] )
-    values (N'522cdd4d-5f68-4b87-8201-a8ba5c7559de', CAST(N'2022-03-30T05:31:17.5590000' AS DateTime2), N'410006e1-ca4e-4502-a9ec-e54d922d2c00', CAST(N'2022-04-04T09:01:10.6090000' AS DateTime2), N'410006e1-ca4e-4502-a9ec-e54d922d2c00', N'Test4', N'', N'a29a3ba5-4b0d-de11-9a51-005056c00008', NULL, N'', N'', 0, NULL, 1, 0, 0, N'', N'', N'', 0, 0, N'1a778e3f-0a8e-e111-84a3-00155d054c03', 0, N'', N'', NULL, NULL, 0, NULL, 0, NULL, NULL, 0, NULL, N'', N'');
-
+MERGE [SysAdminUnitInRole] AS tgt
+USING (VALUES (N'abfe2227-0503-48a3-9352-cd8479428259',N'491f5785-bf17-4e7b-91ef-11989a7c2033',N'040e7d59-d80e-4c98-9364-be3b16a16939', CAST(N'2022-04-04T06:16:08.5470000' AS DateTime2), NULL, CAST(N'2022-04-04T06:16:08.5470000' AS DateTime2), NULL, 0, NULL, 50))
+	AS src ([Id], [SysAdminUnitId], [SysAdminUnitRoleId], [CreatedOn], [CreatedById], [ModifiedOn], [ModifiedById], [ProcessListeners], [SourceAdminUnitId], [Source])
+	ON tgt.[Id] = src.[Id]
+WHEN MATCHED THEN
+	UPDATE
+	SET tgt.[SysAdminUnitId] = src.[SysAdminUnitId]
+WHEN NOT MATCHED THEN 
+	INSERT ([Id], [SysAdminUnitId], [SysAdminUnitRoleId], [CreatedOn], [CreatedById], [ModifiedOn], [ModifiedById], [ProcessListeners], [SourceAdminUnitId], [Source]) VALUES (N'abfe2227-0503-48a3-9352-cd8479428259', N'491f5785-bf17-4e7b-91ef-11989a7c2033', N'040e7d59-d80e-4c98-9364-be3b16a16939', CAST(N'2022-04-04T06:16:08.5470000' AS DateTime2), NULL, CAST(N'2022-04-04T06:16:08.5470000' AS DateTime2), NULL, 0, NULL, 50);
 */
